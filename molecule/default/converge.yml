@@ -1,0 +1,16 @@
+---
+# molecule/default/converge.yml — stratum_factory.emergency_user
+
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    emergency_user_name: stratum-rescue
+    # SHA-512 hash of "MoleculeTestPassword!" — for molecule testing only
+    emergency_user_password_hash: "$6$rounds=656000$moleculetestsalt$FakeHashForMoleculeTestingOnlyNeverUseInProduction"
+    emergency_user_shell: /bin/bash
+    emergency_user_sudo: true
+
+  roles:
+    - role: stratum_factory.emergency_user

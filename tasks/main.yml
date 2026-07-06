@@ -1,0 +1,40 @@
+---
+# tasks/main.yml — stratum_factory.emergency_user
+# All task module references use FQCN.
+
+# Fail fast if the hash is empty — an empty password field produces an
+# account with no password set, which may allow passwordless console login.
+- name: Assert emergency user password hash is non-empty
+  ansible.builtin.assert:
+    that:
+      - emergency_user_password_hash | length > 0
+    fail_msg: >-
+      emergency_user_password_hash is empty. Export STRATUM_EMERGENCY_PASSWORD_HASH
+      before running the playbook. The harness sets it automatically via
+      ensure_emergency_password(). Running ansible-playbook directly requires:
+      STRATUM_EMERGENCY_PASSWORD_HASH=$(ansible-vault view --vault-password-file
+      .harness/keys/.vault-pass .harness/keys/emergency-password.vault |
+      openssl passwd -6 -stdin) ansible-playbook emergency-user.yml
+    success_msg: "emergency password hash present for {{ emergency_user_name }}"
+
+- name: Create last-resort console user
+  ansible.builtin.user:
+    name: "{{ emergency_user_name }}"
+    password: "{{ emergency_user_password_hash }}"
+    shell: "{{ emergency_user_shell }}"
+    create_home: true
+    update_password: always
+    groups: sudo
+    append: true
+    state: present
+  no_log: true
+
+- name: Grant sudo with password required to emergency user
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ emergency_user_name }}"
+    content: "{{ emergency_user_name }} ALL=(ALL) ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
+  when: emergency_user_sudo | bool

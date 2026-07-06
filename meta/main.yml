@@ -1,0 +1,22 @@
+---
+# meta/main.yml — stratum_factory.emergency_user
+
+galaxy_info:
+  author: apellini
+  role_name: emergency_user
+  namespace: stratum_factory
+  description: >
+    Provisions a last-resort password-based OS user (stratum-rescue) on all STRATUM
+    dev VMs (bastion, k3s, containerlab). Designed for use via GCP serial console when
+    SSH/VPN/network access is broken. sudo with password required; sshd unchanged.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+
+collections:
+  - ansible.builtin
+
+dependencies: []

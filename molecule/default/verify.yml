@@ -1,0 +1,53 @@
+---
+# molecule/default/verify.yml — stratum_factory.emergency_user
+
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Assert emergency user exists in passwd
+      ansible.builtin.getent:
+        database: passwd
+        key: stratum-rescue
+      register: rescue_getent
+
+    - name: Fail if emergency user not found
+      ansible.builtin.fail:
+        msg: "Emergency user stratum-rescue not found in /etc/passwd"
+      when: rescue_getent.ansible_facts.getent_passwd['stratum-rescue'] is not defined
+
+    - name: Assert emergency user has a password set (shadow entry non-empty)
+      ansible.builtin.getent:
+        database: shadow
+        key: stratum-rescue
+      register: rescue_shadow
+
+    - name: Fail if emergency user has no password
+      ansible.builtin.fail:
+        msg: "stratum-rescue has no password set in /etc/shadow"
+      when: >
+        rescue_shadow.ansible_facts.getent_shadow['stratum-rescue'][0] in ['', '!', '*', '!!']
+
+    - name: Assert sudoers file exists for emergency user
+      ansible.builtin.stat:
+        path: /etc/sudoers.d/stratum-rescue
+      register: sudoers_stat
+
+    - name: Fail if sudoers file not present
+      ansible.builtin.fail:
+        msg: "Sudoers file /etc/sudoers.d/stratum-rescue not found"
+      when: not sudoers_stat.stat.exists
+
+    - name: Assert sudoers file does NOT grant NOPASSWD
+      ansible.builtin.command:
+        cmd: grep -q NOPASSWD /etc/sudoers.d/stratum-rescue
+      register: nopasswd_check
+      failed_when: nopasswd_check.rc == 0
+      changed_when: false
+
+    - name: Assert emergency user shell is /bin/bash
+      ansible.builtin.assert:
+        that:
+          - rescue_getent.ansible_facts.getent_passwd['stratum-rescue'][5] == '/bin/bash'
+        fail_msg: "stratum-rescue shell is not /bin/bash"

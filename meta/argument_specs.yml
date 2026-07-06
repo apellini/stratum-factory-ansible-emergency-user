@@ -1,0 +1,38 @@
+---
+# meta/argument_specs.yml — stratum_factory.emergency_user
+# Strict input validation. The wrapper must supply all REQUIRED variables.
+
+argument_specs:
+  main:
+    short_description: Provisions a last-resort password-based OS user on all STRATUM dev VMs.
+    description:
+      - Creates a local Linux account usable via the GCP serial console when SSH/VPN/network access is broken.
+      - The account has sudo access (password required, not passwordless — not NOPASSWD).
+      - sshd PasswordAuthentication is NOT touched — this role does not modify sshd config.
+      - Password must be supplied as a pre-hashed SHA-512 crypt string, never plaintext.
+    options:
+      emergency_user_name:
+        type: str
+        default: stratum-rescue
+        description: Username for the last-resort console account.
+
+      emergency_user_password_hash:
+        type: str
+        required: true
+        no_log: true
+        description: >
+          Pre-hashed password string (SHA-512 crypt format, e.g. output of
+          `openssl passwd -6 -stdin`). Supplied by the wrapper from the
+          harness-managed ansible-vault store. REQUIRED.
+
+      emergency_user_shell:
+        type: str
+        default: /bin/bash
+        description: Login shell for the emergency user.
+
+      emergency_user_sudo:
+        type: bool
+        default: true
+        description: >
+          When true, installs a sudoers entry granting the emergency user full sudo
+          with password required (ALL=(ALL) ALL — NOT NOPASSWD).
