@@ -24,7 +24,7 @@
     shell: "{{ emergency_user_shell }}"
     create_home: true
     update_password: always
-    groups: sudo
+    groups: "{{ 'wheel' if ansible_facts['os_family'] == 'RedHat' else 'sudo' }}"
     append: true
     state: present
   no_log: true

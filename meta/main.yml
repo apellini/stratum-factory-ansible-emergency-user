@@ -15,6 +15,9 @@ galaxy_info:
     - name: Ubuntu
       versions:
         - all
+    - name: Rocky
+      versions:
+        - "9"
 
 collections:
   - ansible.builtin
